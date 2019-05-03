@@ -5,6 +5,7 @@ City Explorer: Lab07
 Day 1: Roger Huba and Devon Hackley
 Day 2: Roger Huba and Paolo Chidrome
 Day 3: Paolo Chidrome and Peter Tynan
+Day 4: Paolo Chidrome and Jorie Fernandez
 
 ## Overview
 <!-- Provide a high level overview of what this application is and why you are building it, beyond the fact that it's an assignment for this class. (i.e. What's your problem domain?) -->
@@ -131,4 +132,32 @@ Finish time: 1210
 
 Actual time needed to complete: 10 Min
 
+# Features Day 4
+Number and name of feature: Movie
+Estimate of time needed to complete: 20 mins
+
+Start time: 900
+
+Finish time: 940
+
+Actual time needed to complete: 20 mins
+
+Number and name of feature: Yelp
+Estimate of time needed to complete: 15 mins
+
+Start time: 940
+
+Finish time: 10:30
+
+Actual time needed to complete: 40 mins
+
+
+Number and name of feature: Caching
+Estimate of time needed to complete: 15 mins
+
+Start time: 1030
+
+Finish time: 1200
+
+Actual time needed to complete: 1.5 hrs
 
