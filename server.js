@@ -8,6 +8,7 @@ const express = require('express');
 const app = express();
 app.use(cors());
 
+
 const PORT = process.env.PORT || 8000;
 const weatherArr = [];
 
@@ -35,7 +36,7 @@ const Events = function(link, name, eventDate, summary){
   this.summary = summary;
 };
 
-const Movies = function(title, overview, average_votes, total_votes, image_url, popularity, released){
+const Movie = function(title, overview, average_votes, total_votes, image_url, popularity, released){
   this.title = title;
   this.overview = overview;
   this.average_votes = average_votes;
@@ -106,6 +107,25 @@ app.get('/events', (request, response) => {
   }
 });
 
+// movies route
+app.get('/movies', (request, response) => {
+  try {
+    checkDB(request, response, 'movies');
+  }
+  catch(e) {
+    response.status(500).send('Sorry something went wrong with movies!',e);
+  }
+});
+
+app.get('/yelp', (request, response) => {
+  try {
+    checkDB(request, response, 'yelp');
+  }
+  catch(e) {
+    response.status(500).send('Sorry something went wrong with yelp!',e);
+  }
+});
+
 // Console logs PORT when server is listening
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 
@@ -121,9 +141,13 @@ const checkDB = (request, response, tableName) => {
       if(data.rowCount > 0){
         return response.send(data.rows);
       } else if(tableName === 'weather'){
-        return weatherAPICall(request);
+        return weatherAPICall(request, response);
       } else if(tableName === 'events'){
-        return eventsAPICall(request);
+        return eventsAPICall(request, response);
+      } else if(tableName === 'movies'){
+        return movieAPICall(request, response);
+      } else if(tableName === 'yelp'){
+        return yelpAPICall(request, response);
       }
     })
     .catch((error)=> {
@@ -132,7 +156,7 @@ const checkDB = (request, response, tableName) => {
 };
 
 // Helper function to make API call and cache Weather Data of unknown search queries.
-const weatherAPICall = (request) => {
+const weatherAPICall = (request, response) => {
   let weaUrl = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
   superagent.get(weaUrl)
     .then(result => {
@@ -144,12 +168,12 @@ const weatherAPICall = (request) => {
         let values = [item.forecast, item.time, request.query.data.search_query];
         client.query(insertStatement, values);
       });
-      return newWeatherArr;
+      response.send(newWeatherArr);
     });
 };
 
 // Helper function to make API call and cache Event Data of unknown search queries.
-const eventsAPICall = (request) => {
+const eventsAPICall = (request, response) => {
   let eventURL = `https://www.eventbriteapi.com/v3/events/search?location.longitude=${request.query.data.longitude}&location.latitude=${request.query.data.latitude}&token=${process.env.EVENTBRITE_API_KEY}`;
   superagent.get(eventURL)
     .then(result => {
@@ -161,6 +185,58 @@ const eventsAPICall = (request) => {
         let values = [item.link, item.name, item.event_date, item.summary, request.query.data.search_query];
         client.query(insertStatement, values);
       });
-      return eventsArray;
+      response.send(eventsArray);
     });
 };
+
+
+// function to call movie api
+const movieAPICall = (request, response) => {
+  let movieURL = `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.MOVIE_API_KEY}&language=en-US&sort_by=popularity.desc&include_adult=false&include_video=false&page=1`;
+  superagent.get(movieURL)
+    .then(result => {
+      let moviesArray = result.body.results.map((element) => {
+        return new Movie(element.title, element.overview, element.vote_average, element.vote_count, element.poster_path, element.popularity, element.release_date);
+      });
+      moviesArray.forEach((item) => {
+        let insertStatement = `INSERT INTO movies (title, overview, average_votes, total_votes, image_url, popularity, released_on, search_query) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+        let values = [item.title, item.overview, item.average_votes, item.total_votes, `https://image.tmdb.org/t/p/w200${item.image_url}`, item.popularity, item.released_on, request.query.data.search_query];
+        client.query(insertStatement, values);
+      });
+      response.send(moviesArray);
+    });
+};
+
+// yelp call
+const yelpAPICall = (request, response) => {
+  let yelpURL = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
+  superagent.get(yelpURL)
+    .set(`Authorization`, `Bearer ${process.env.YELP_API_KEY}`)
+    .then((data) => {
+      let businessesArray = data.body.businesses.map((element) => {
+        return new Yelp(element.name, element.image_url, element.price, element.rating, element.url);
+      });
+      businessesArray.forEach((item) => {
+        let insertStatement = `INSERT INTO yelp (name, image_url, price, rating, url, search_query) VALUES ($1, $2, $3, $4, $5, $6);`;
+        let values = [item.name, item.image_url, item.price, item.rating, item.url, item.search_query];
+        client.query(insertStatement, values);
+      });
+      response.send(businessesArray);
+    });
+};
+
+//Cache Invalidation
+const timeouts = {
+  //15 secs
+  weather: 15 * 1000,
+  //24 hours
+  location: 24 * 60 * 60 * 1000,
+  event: 24 * 60 * 60 * 1000,
+  movie: 30 * 24 * 60 * 60 * 1000,
+  yelp: 2 * 24 * 60 * 60 * 1000,
+};
+
+// const deleteRecord = (table){
+
+// }
+
