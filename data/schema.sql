@@ -21,3 +21,23 @@ CREATE TABLE events (
   summary TEXT,
   search_query TEXT
 );
+
+CREATE TABLE movies {
+  id SERIAL,
+  title TEXT,
+  overview TEXT,
+  average_votes DECIMAL,
+  total_votes INTEGER,
+  image_url TEXT,
+  popularity DECIMAL,
+  released_on TEXT
+}
+
+CREATE TABLE yelp {
+  id SERIAL,
+  name TEXT,
+  image_url TEXT,
+  price TEXT,
+  rating DECIMAL,
+  url TEXT
+}
