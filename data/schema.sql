@@ -6,7 +6,7 @@ CREATE TABLE location (
   longitude DECIMAL,
   formatted_query TEXT,
   search_query TEXT,
-  date_created DATE
+  date_created BIGINT
 );
 
 CREATE TABLE weather (
@@ -14,7 +14,7 @@ CREATE TABLE weather (
   forecast TEXT,
   time TEXT,
   search_query TEXT,
-  date_created DATE
+  date_created BIGINT
 );
 
 CREATE TABLE events (
@@ -24,7 +24,7 @@ CREATE TABLE events (
   event_date TEXT,
   summary TEXT,
   search_query TEXT,
-  date_created DATE
+  date_created BIGINT
 );
 
 CREATE TABLE movies (
@@ -37,7 +37,7 @@ CREATE TABLE movies (
   popularity DECIMAL,
   released_on TEXT,
   search_query TEXT,
-  date_created DATE
+  date_created BIGINT
 );
 
 CREATE TABLE yelp (
@@ -48,5 +48,5 @@ CREATE TABLE yelp (
   rating DECIMAL,
   url TEXT,
   search_query TEXT,
-  date_created DATE
+  date_created BIGINT
 );

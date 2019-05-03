@@ -70,8 +70,8 @@ app.get('/location', (request, response) => {
           superagent.get(locUrl)
             .then(result=> {
               let loc = new Location(result.body);
-              let insertStatement = `INSERT INTO location (latitude, longitude, formatted_query, search_query) VALUES ($1, $2, $3, $4);`;
-              let values = [loc.latitude, loc.longitude, loc.formatted_query, loc.search_query.toLowerCase()];
+              let insertStatement = `INSERT INTO location (latitude, longitude, formatted_query, search_query, date_created) VALUES ($1, $2, $3, $4, $5);`;
+              let values = [loc.latitude, loc.longitude, loc.formatted_query, loc.search_query.toLowerCase(), Date.now()];
               client.query(insertStatement, values);
               response.send(loc);
             })
@@ -139,7 +139,19 @@ const checkDB = (request, response, tableName) => {
   client.query(sqlQueryCheck, values)
     .then((data) => {
       if(data.rowCount > 0){
-        return response.send(data.rows);
+        if(checkTimeout(tableName, data.rows[0].date_created, timeouts)){
+          console.log('about to delete your shit.');
+          deleteRecord(tableName, request.query.data.search_query);
+          if(tableName === 'weather'){
+            return weatherAPICall(request, response);
+          } else if(tableName === 'events'){
+            return eventsAPICall(request, response);
+          } else if(tableName === 'movies'){
+            return movieAPICall(request, response);
+          } else if(tableName === 'yelp'){
+            return yelpAPICall(request, response);
+          }
+        }
       } else if(tableName === 'weather'){
         return weatherAPICall(request, response);
       } else if(tableName === 'events'){
@@ -164,8 +176,8 @@ const weatherAPICall = (request, response) => {
         return new Weather(element);
       });
       newWeatherArr.forEach((item)=> {
-        let insertStatement = `INSERT INTO weather (forecast, time, search_query) VALUES ($1, $2, $3);`;
-        let values = [item.forecast, item.time, request.query.data.search_query];
+        let insertStatement = `INSERT INTO weather (forecast, time, search_query, date_created) VALUES ($1, $2, $3, $4);`;
+        let values = [item.forecast, item.time, request.query.data.search_query, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(newWeatherArr);
@@ -181,8 +193,8 @@ const eventsAPICall = (request, response) => {
         return new Events(element.url, element.name.text, element.start.local, element.description.text);
       });
       eventsArray.forEach((item) => {
-        let insertStatement = `INSERT INTO events (link, name, event_date, summary, search_query) VALUES ($1, $2, $3, $4, $5);`;
-        let values = [item.link, item.name, item.event_date, item.summary, request.query.data.search_query];
+        let insertStatement = `INSERT INTO events (link, name, event_date, summary, search_query, date_created) VALUES ($1, $2, $3, $4, $5, $6);`;
+        let values = [item.link, item.name, item.event_date, item.summary, request.query.data.search_query, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(eventsArray);
@@ -199,8 +211,8 @@ const movieAPICall = (request, response) => {
         return new Movie(element.title, element.overview, element.vote_average, element.vote_count, element.poster_path, element.popularity, element.release_date);
       });
       moviesArray.forEach((item) => {
-        let insertStatement = `INSERT INTO movies (title, overview, average_votes, total_votes, image_url, popularity, released_on, search_query) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
-        let values = [item.title, item.overview, item.average_votes, item.total_votes, `https://image.tmdb.org/t/p/w200${item.image_url}`, item.popularity, item.released_on, request.query.data.search_query];
+        let insertStatement = `INSERT INTO movies (title, overview, average_votes, total_votes, image_url, popularity, released_on, search_query, date_created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
+        let values = [item.title, item.overview, item.average_votes, item.total_votes, `https://image.tmdb.org/t/p/w200${item.image_url}`, item.popularity, item.released_on, request.query.data.search_query, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(moviesArray);
@@ -217,8 +229,8 @@ const yelpAPICall = (request, response) => {
         return new Yelp(element.name, element.image_url, element.price, element.rating, element.url);
       });
       businessesArray.forEach((item) => {
-        let insertStatement = `INSERT INTO yelp (name, image_url, price, rating, url, search_query) VALUES ($1, $2, $3, $4, $5, $6);`;
-        let values = [item.name, item.image_url, item.price, item.rating, item.url, item.search_query];
+        let insertStatement = `INSERT INTO yelp (name, image_url, price, rating, url, search_query, date_created) VALUES ($1, $2, $3, $4, $5, $6, $7);`;
+        let values = [item.name, item.image_url, item.price, item.rating, item.url, item.search_query, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(businessesArray);
@@ -236,7 +248,15 @@ const timeouts = {
   yelp: 2 * 24 * 60 * 60 * 1000,
 };
 
-// const deleteRecord = (table){
+const deleteRecord = (table, query_param) => {
+  let sql = `DELETE FROM ${table} WHERE search_query = $1;`;
+  let values = [query_param];
+  client.query(sql, values);
+};
 
-// }
+//Check timeout
+const checkTimeout = (tableName, sqlData) => {
+  return (Date.now() - sqlData) > timeouts[tableName];
+};
+
 
