@@ -137,7 +137,7 @@ app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 // Helper function to check whether or not search query is already cached.
 const checkDB = (request, response, tableName) => {
   let sqlQueryCheck = `SELECT * FROM ${tableName} WHERE search_query = $1;`;
-  let values = [request.query.query_data];
+  let values = [request.query.queryData];
 
 
   client.query(sqlQueryCheck, values)
@@ -145,7 +145,7 @@ const checkDB = (request, response, tableName) => {
       if(data.rowCount > 0){
         if(checkTimeout(tableName, data.rows[0].date_created, timeouts)){
           console.log('about to delete your shit.');
-          deleteRecord(tableName, request.query.data.search_query);
+          deleteRecord(tableName, request.query.queryData);
           if(tableName === 'weather'){
             return weatherAPICall(request, response);
           } else if(tableName === 'events'){
@@ -181,7 +181,7 @@ const weatherAPICall = (request, response) => {
       });
       newWeatherArr.forEach((item)=> {
         let insertStatement = `INSERT INTO weather (forecast, time, search_query, date_created) VALUES ($1, $2, $3, $4);`;
-        let values = [item.forecast, item.time, request.query.data.search_query, Date.now()];
+        let values = [item.forecast, item.time, request.query.queryData, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(newWeatherArr);
@@ -198,7 +198,7 @@ const eventsAPICall = (request, response) => {
       });
       eventsArray.forEach((item) => {
         let insertStatement = `INSERT INTO events (link, name, event_date, summary, search_query, date_created) VALUES ($1, $2, $3, $4, $5, $6);`;
-        let values = [item.link, item.name, item.event_date, item.summary, request.query.data.search_query, Date.now()];
+        let values = [item.link, item.name, item.event_date, item.summary, request.query.queryData, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(eventsArray);
@@ -216,7 +216,7 @@ const movieAPICall = (request, response) => {
       });
       moviesArray.forEach((item) => {
         let insertStatement = `INSERT INTO movies (title, overview, average_votes, total_votes, image_url, popularity, released_on, search_query, date_created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
-        let values = [item.title, item.overview, item.average_votes, item.total_votes, `https://image.tmdb.org/t/p/w200${item.image_url}`, item.popularity, item.released_on, request.query.data.search_query, Date.now()];
+        let values = [item.title, item.overview, item.average_votes, item.total_votes, `https://image.tmdb.org/t/p/w200${item.image_url}`, item.popularity, item.released_on, request.query.queryData, Date.now()];
         client.query(insertStatement, values);
       });
       response.send(moviesArray);
