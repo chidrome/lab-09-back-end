@@ -54,10 +54,14 @@ const Yelp = function(name, image_url, price, rating, url){
   this.url = url;
 };
 
+app.get('/', (req, res) => {
+  res.send('THIS IS THE HOME STUB!');
+});
+
 // Location Endpoint
 app.get('/location', (request, response) => {
   try {
-    let queryData = request.query.data.toLowerCase();
+    let queryData = request.query.queryData.toLowerCase();
     let sqlQueryDataCheck = `SELECT * FROM location WHERE search_query = $1;`;
     let values = [queryData];
 
@@ -169,7 +173,7 @@ const checkDB = (request, response, tableName) => {
 
 // Helper function to make API call and cache Weather Data of unknown search queries.
 const weatherAPICall = (request, response) => {
-  let weaUrl = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+  let weaUrl = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.lat},${request.query.long}`;
   superagent.get(weaUrl)
     .then(result => {
       let newWeatherArr = result.body.daily.data.map(element => {
@@ -186,7 +190,7 @@ const weatherAPICall = (request, response) => {
 
 // Helper function to make API call and cache Event Data of unknown search queries.
 const eventsAPICall = (request, response) => {
-  let eventURL = `https://www.eventbriteapi.com/v3/events/search?location.longitude=${request.query.data.longitude}&location.latitude=${request.query.data.latitude}&token=${process.env.EVENTBRITE_API_KEY}`;
+  let eventURL = `https://www.eventbriteapi.com/v3/events/search?location.longitude=${request.query.long}&location.latitude=${request.query.lat}&token=${process.env.EVENTBRITE_API_KEY}`;
   superagent.get(eventURL)
     .then(result => {
       let eventsArray = result.body.events.map((element) => {
@@ -221,7 +225,7 @@ const movieAPICall = (request, response) => {
 
 // yelp call
 const yelpAPICall = (request, response) => {
-  let yelpURL = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
+  let yelpURL = `https://api.yelp.com/v3/businesses/search?location=${request.query.queryData}`;
   superagent.get(yelpURL)
     .set(`Authorization`, `Bearer ${process.env.YELP_API_KEY}`)
     .then((data) => {
