@@ -102,15 +102,6 @@ app.get('/weather', (request, response) => {
   }
 });
 
-// Events Endpoint
-app.get('/events', (request, response) => {
-  try {
-    checkDB(request, response, 'events');
-  } catch(e) {
-    response.status(500).send('Sorry something went wrong with events!',e);
-  }
-});
-
 // movies route
 app.get('/movies', (request, response) => {
   try {
@@ -118,6 +109,15 @@ app.get('/movies', (request, response) => {
   }
   catch(e) {
     response.status(500).send('Sorry something went wrong with movies!',e);
+  }
+});
+
+// Events Endpoint
+app.get('/events', (request, response) => {
+  try {
+    checkDB(request, response, 'events');
+  } catch(e) {
+    response.status(500).send('Sorry something went wrong with events!',e);
   }
 });
 
@@ -190,6 +190,8 @@ const weatherAPICall = (request, response) => {
 
 // Helper function to make API call and cache Event Data of unknown search queries.
 const eventsAPICall = (request, response) => {
+  console.log(request.query);
+  console.log(request);
   let eventURL = `https://www.eventbriteapi.com/v3/events/search?location.longitude=${request.query.long}&location.latitude=${request.query.lat}&token=${process.env.EVENTBRITE_API_KEY}`;
   superagent.get(eventURL)
     .then(result => {
